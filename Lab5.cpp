@@ -23,6 +23,7 @@ void readProcessesFromFile(string fileName){
     ifstream binaryFile;
     int size =0;
     int totalMem = 0;
+    int numOfFiles = 0;
 
     //open the binary file
     binaryFile.open(fileName, ::ifstream::binary);
@@ -50,6 +51,7 @@ void readProcessesFromFile(string fileName){
         binaryFile.read(reinterpret_cast<char*>(&p.checkSum), sizeof(p.checkSum));
 
         totalMem += (p.limit - p.base);
+        numOfFiles += p.numFiles;
 
         cout << "Process["<<i<<"] Name: " << p.name <<endl;
         cout << "Process ID: " << p.id << endl;
@@ -65,11 +67,30 @@ void readProcessesFromFile(string fileName){
         i++;
 
     }
-    cout << "Total memory allocated by the processors is: " << totalMem << endl;
+    cout << "\nTotal memory allocated by the processors is: " << totalMem << endl;
+    cout << "\nTotal number of open files: " <<numOfFiles << endl;
     binaryFile.close();
 }
 
-void * player(void * arg){
+void * priority(void * arg){
+
+
+    return (void*)0;
+}
+
+void * shortestJob(void * arg){
+
+
+    return (void*)0;
+}
+
+void * roundRobin(void * arg){
+
+
+    return (void*)0;
+}
+
+void * firstComeFirstServe(void * arg){
 
 
     return (void*)0;
