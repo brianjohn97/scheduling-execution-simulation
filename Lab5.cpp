@@ -43,7 +43,7 @@ void readProcessesFromFile(string fileName){
     while (!in.eof()){
 
         //create struct for holding the data
-        process proc;
+        process proc = {};
         in.read(reinterpret_cast<char*>(&proc.name), sizeof(proc.name));
         in.read(reinterpret_cast<char*>(&proc.id), sizeof(proc.id));
         in.read(reinterpret_cast<char*>(&proc.status), sizeof(proc.status));
@@ -79,26 +79,39 @@ void readProcessesFromFile(string fileName){
 }
 
 void * priority(void * arg){
+    float flo = *static_cast<float*>(arg);
+    int val = flo * 100;
+    pthread_mutex_lock(&myMutex);
+    cout << "\nPriority!: " << val << endl;
+    pthread_mutex_unlock(&myMutex);
 
-    cout << "\nPriority!\n";
-    return (void*)0;
+    return NULL;
 }
 
 void * shortestJob(void * arg){
-
-    cout << "\nShortest Job!\n";
+    float flo = *static_cast<float*>(arg);
+    int val = flo * 100;
+    pthread_mutex_lock(&myMutex);
+    cout << "\nShortest Job!: " << val << endl;
+    pthread_mutex_unlock(&myMutex);
     return (void*)0;
 }
 
 void * roundRobin(void * arg){
-
-    cout << "\nRound Robin!\n";
+    float flo = *static_cast<float*>(arg);
+    int val = flo * 100;
+    pthread_mutex_lock(&myMutex);
+    cout << "\nRound Robin!: " << val << endl;
+    pthread_mutex_unlock(&myMutex);
     return (void*)0;
 }
 
 void * firstComeFirstServe(void * arg){
-
-    cout << "\nFirst Come First Serve!\n";
+    float flo = *static_cast<float*>(arg);
+    int val = flo * 100;
+    pthread_mutex_lock(&myMutex);
+    cout << "\nFirst Come First Serve!: " << val << endl;
+    pthread_mutex_unlock(&myMutex);
     return (void*)0;
 }
 
@@ -138,7 +151,7 @@ void printWhatsMissing(int argc, char **argv){
     }
 
     //making sure that all the percentages add up to 100%
-    float perc, total = 0, max = 1.0;
+    float perc, total = 0;
     for(int i = 3, j = 2;i < argc; i += 2, j += 2){
         try {
             int algo = stoi(argv[j]);
@@ -153,11 +166,9 @@ void printWhatsMissing(int argc, char **argv){
             cout << "Should look something like this: ./lab5 PCB.bin 1 0.4 2 0.5 3 0.1\n\n";
             exit(0);
         }
-        cout << endl << total << endl;
         total += perc;
     }
-    cout << "tota: " << total << " max: " << max << endl;
-    if(total != max){
+    if(abs(total - 1.0) > 0.0001 ){
         cout << "\nYour percentages do not add up!\n\n";
         exit(0);
     }
@@ -186,13 +197,13 @@ void getProcessors(int argc, char **argv){
             exit(0);
         }
         if(sched == 0){
-            pthread_create(&myThreads[k], 0, firstComeFirstServe, (void *)(long)k);
+            pthread_create(&myThreads[k], 0, firstComeFirstServe, &perc);
         }else if (sched == 1){
-            pthread_create(&myThreads[k], 0, roundRobin, (void *)(long)k);
+            pthread_create(&myThreads[k], 0, roundRobin, &perc);
         }else if (sched == 2){
-            pthread_create(&myThreads[k], 0, shortestJob, (void *)(long)k);
+            pthread_create(&myThreads[k], 0, shortestJob, &perc);
         }else if (sched == 3){
-            pthread_create(&myThreads[k], 0, priority, (void *)(long)k);
+            pthread_create(&myThreads[k], 0, priority, &perc);
         }
     }
 
