@@ -80,30 +80,32 @@ void readProcessesFromFile(string fileName){
 
 void * priority(void * arg){
 
-
+    cout << "\nPriority!\n";
     return (void*)0;
 }
 
 void * shortestJob(void * arg){
 
-
+    cout << "\nShortest Job!\n";
     return (void*)0;
 }
 
 void * roundRobin(void * arg){
 
-
+    cout << "\nRound Robin!\n";
     return (void*)0;
 }
 
 void * firstComeFirstServe(void * arg){
 
-
+    cout << "\nFirst Come First Serve!\n";
     return (void*)0;
 }
 
 //prints the items that the user is missing from the command line arguments
-void printWhatsMissing(int argc){
+void printWhatsMissing(int argc, char **argv){
+
+    //check to see if they are missing everything
     if(argc == 1){
         cout << "\nYou need to provide: "
                 "\nThe binary file."
@@ -111,20 +113,52 @@ void printWhatsMissing(int argc){
                 "\nAnd the percentage of processes that the algorithm is gonna run.\n\n";
         exit(0);
     }
+
+    ////check to see if they are missing the algorithm and percentages
     if(argc == 2){
         cout << "\nYou need to provide: "
                 "\nThe scheduling algorithm."
                 "\nAnd the percentage of processes that the algorithm is gonna run.\n\n";
         exit(0);
     }
+
+    //check to see if they are missing the percentage
     if(argc == 3){
         cout << "\nYou need to provide: "
                 "\nThe percentage of processes that the algorithm is gonna run.\n\n";
         exit(0);
     }
+
+    //check to see if they are an uneven amount of arguments
+    //meaning there are some algorithm missing their percentages or vice versa
     if(argc > 3 && argc%2 != 0){
         cout << "\nThere is an uneven amount of scheduling algorithms and percentage!"
                 "\nPlease try again!\n\n";
+        exit(0);
+    }
+
+    //making sure that all the percentages add up to 100%
+    float perc, total = 0, max = 1.0;
+    for(int i = 3, j = 2;i < argc; i += 2, j += 2){
+        try {
+            int algo = stoi(argv[j]);
+            perc = stof(argv[i]);
+            if(algo < 0 || algo > 3){
+                cout << "\nThe inputted algorithm selection should be between 0 and 3.\n";
+                cout << "Please try again with the correct algorithm choices.\n\n";
+                exit(0);
+            }
+        }catch(exception &err){
+            cout << "\nInputted percentages of pcb file are incorrect! \n";
+            cout << "Should look something like this: ./lab5 PCB.bin 1 0.4 2 0.5 3 0.1\n\n";
+            exit(0);
+        }
+        cout << endl << total << endl;
+        total += perc;
+    }
+    cout << "tota: " << total << " max: " << max << endl;
+    if(total != max){
+        cout << "\nYour percentages do not add up!\n\n";
         exit(0);
     }
 }
@@ -136,22 +170,34 @@ void getProcessors(int argc, char **argv){
 
     int sched;
     float perc;
+    float max = 1.0;
+    float total = 0;
     pthread_t myThreads[10];
-    //printWhatsMissing(argc);
+    printWhatsMissing(argc, argv);
     //readProcessesFromFile(argv[1]);
-    cout << endl;
-
-    for (int i = 2, j = i + 1; i < argc; i += 2, j += 2) {
+    int k=0;
+    for (int i = 2, j = i + 1; i < argc; i += 2, j += 2, k++) {
         try {
             sched = stoi(argv[i]);
             perc = stof(argv[j]);
         }catch(exception &err){
             cout << "\nInputted scheduling algorithm or percentage of pcb file is incorrect! \n";
-            cout << "Should look like this: ./lab5 PCB.bin 1 0.4 2 0.5 3 0.1\n\n";
+            cout << "Should look something like this: ./lab5 PCB.bin 1 0.4 2 0.5 3 0.1\n\n";
             exit(0);
         }
+        if(sched == 0){
+            pthread_create(&myThreads[k], 0, firstComeFirstServe, (void *)(long)k);
+        }else if (sched == 1){
+            pthread_create(&myThreads[k], 0, roundRobin, (void *)(long)k);
+        }else if (sched == 2){
+            pthread_create(&myThreads[k], 0, shortestJob, (void *)(long)k);
+        }else if (sched == 3){
+            pthread_create(&myThreads[k], 0, priority, (void *)(long)k);
+        }
+    }
 
-        
+    for (int i = 1; i < k; i++){
+        pthread_join(myThreads[i], NULL);
     }
 }
 int main(int argc, char *argv[]){
