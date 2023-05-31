@@ -35,14 +35,14 @@ vector<process> p3;
 
 vector<int> pos;
 
-int totalProc = 0;
+int size = 0;
 
 //read in the processes from the binary file name
 void readProcessesFromFile(string fileName){
 
     //variables for reading the file
     ifstream in;
-    int size =0, totalMem = 0, numOfFiles = 0, j;
+    int totalMem = 0, numOfFiles = 0, x=0,  j;
 
     //open the binary file
     in.open(fileName, ::ifstream::binary);
@@ -52,8 +52,9 @@ void readProcessesFromFile(string fileName){
     size = in.tellg();
     in.seekg(0, in.beg);
 
+    size /= 63;
     //read the process information from the binary file
-    while (!in.eof()){
+    while (x < size){
 
         //create struct for holding the data
         process proc = {};
@@ -67,26 +68,16 @@ void readProcessesFromFile(string fileName){
         in.read(reinterpret_cast<char*>(&proc.numFiles), sizeof(proc.numFiles));
         in.read(reinterpret_cast<char*>(&proc.priority), sizeof(proc.priority));
         in.read(reinterpret_cast<char*>(&proc.checkSum), sizeof(proc.checkSum));
-
-        //make sure there are no duplicates
-        if (totalProc > 0) {
-            j = totalProc - 1;
-            if(processes[j].id == proc.id){
-                break;}
-        }
-
         //calculate the memory and the number of files
         totalMem += (proc.limit - proc.base);
         numOfFiles += proc.numFiles;
 
         //add the struct to a vector and increase x
         processes.push_back(proc);
-        totalProc++;
+        x++;
     }
-    totalProc--;
     in.close();
-
-    cout << "\nThe number of processes available in the file: " << totalProc << endl;
+    cout << "\nThe number of processes available in the file: " << size << endl;
     cout << "Total number of memory allocated by the processes is: " << totalMem << endl;
     cout << "Overall total number of open files: " <<numOfFiles << endl << endl;
 
@@ -159,9 +150,7 @@ void print3(){
 }
 
 void printProcesses(){
-    int size = processes.size();
-    size -= 2;
-    for (int i = 0; i <= size; ++i) {
+    for (int i = 0; i < size; ++i) {
         cout << "\nProcess["<<i<<"] Name: " << processes[i].name <<endl;
         cout << "Process ID: " << processes[i].id << endl;
         cout << "Activity Status: " << static_cast<int>(processes[i].status) << endl;
@@ -210,38 +199,70 @@ void * shortestJob(void * arg){
 
 void * roundRobin(void * arg){
     int start = (int)(long)arg;
-    int end;
+    int end = p1.size() -1;
     pthread_mutex_lock(&myMutex);
     cout << "\nRound Robin!: " << start << endl;
-    //print1();
-    for (int i = 0; i <= (p1.size()-1); ++i) {
+    print1();
+
+    int i=0;
+    while (true) {
+        if(p1.empty()){break;}
+        cout << p1[i].cpuTime << endl;
         p1[i].cpuTime -= 2;
-        if(){
-            p1.
-            cout << p1[i].name << " has finished!\nMoving on to the next Process!\n\n";
+        cout << p1[i].cpuTime << endl;
+        if(p1[i].cpuTime < 1){
+            cout << "RR: " <<  p1[i].name << " has finished!\nMoving on to the next Process!\n\n";
+            p1.erase(p1.begin() + i);
+            print1();
+            cout << "end: " << end << endl;
+            end--;
+            cout << "end: "<<end << endl;
         }
         usleep(20000);
+        cout << "i: " << i << " end: " << end <<  endl;
+        if(i == end){i = 0; continue;}
+        i++;
     }
-    cout << "First come first Serve has finished all of its processes!\n\n";
+    cout << "Round Robin has finished all of its processes!\n\n";
     pthread_mutex_unlock(&myMutex);
     return (void*)0;
 }
 
 void * firstComeFirstServe(void * arg){
+
+
+    //have the lock and unlock when it checks if its empty
+    //if empty start lock then check which vector is the biggest
+    //then divide that vectors size by half then add them to this vector
+
     pthread_mutex_lock(&myMutex);
     cout << "\nFirst Come First Serve!" << endl;
-   //print0();
-    for (int i = 0; i <= (p0.size()-1); ++i) {
+    /*
+    print0();
+    cout << endl << endl;
+    int end = p0.size();
+    for (int i = 0; i <= end; ++i) {
+        if(p0.empty()){
+            while(1){
+                if(!p0.empty()){
+                    break;
+                }
+            }
+        }
         int time = p0[i].cpuTime;
         while(time > 0){
             time -= 2;
             //cout << time << endl;
             usleep(20000);
         }
-        cout << p0[i].name << " has finished!\nMoving on to the next Process!\n\n";
+
+        cout << "FCFS: " <<  p0[0].name << " has finished!\nMoving on to the next Process!\n\n";
+        p0.erase(p0.begin());
+        print0();
     }
     cout << "First come first Serve has finished all of its processes!\n\n";
-
+    if(p0.empty()){cout << "true\n";}
+    //print0();*/
     pthread_mutex_unlock(&myMutex);
     return (void*)0;
 }
@@ -333,7 +354,7 @@ void getProcessors(int argc, char **argv){
             exit(0);
         }
 
-        x = perc * totalProc;
+        x = perc * size;
         x--;
         if(i != 2){x += temp;}
         //cout <<  "x: " << x << " temp: " << temp << endl;
@@ -375,9 +396,7 @@ void getProcessors(int argc, char **argv){
 }
 int main(int argc, char *argv[]){
     getProcessors(argc, argv);
-//    for (int i = 0; i < pos.size(); ++i) {
-//        cout << pos[i] << endl;
-//    }
+
 
     return 0;
 }
