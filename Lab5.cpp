@@ -155,9 +155,12 @@ void loadBalancing(int empty){
     if(half <= 7){ return;}
 
     //determines which processor has the most
-    cout << "\nTRANSFERRING\n\n";
+    cout << "\nTRANSFERRING ";
     if(largest == proc1){
-
+        cout << half << " processes from the First Come First Serve queue to";
+        if(empty == 1){ cout << " the Round Robin queue!\n\n";}
+        if(empty == 2){ cout << " the Shortest Job queue!\n\n";}
+        if(empty == 3){ cout << " the Priority queue!\n\n";}
         //splits the proccessor amount in half then adds it to the one that is empty
 
         for (int i = p0.size()-1; i >= half; --i) {
@@ -168,7 +171,10 @@ void loadBalancing(int empty){
             p0.pop_back();
         }
     }else if(largest == proc2){
-
+        cout << half << " processes from the Round Robin queue to";
+        if(empty == 0){ cout << " the First Come First Serve queue!\n\n";}
+        if(empty == 2){ cout << " the Shortest Job queue!\n\n";}
+        if(empty == 3){ cout << " the Priority queue!\n\n";}
         //splits the processor amount in half then adds it to the one that is empty
 
         int half = largest/2;
@@ -181,7 +187,10 @@ void loadBalancing(int empty){
             p1.pop_back();
         }
     }else if(largest == proc3){
-
+        cout << half <<  " processes from the Shortest Job First queue to";
+        if(empty == 0){ cout << " the First Come First Serve queue!\n\n";}
+        if(empty == 1){ cout << " the Round Robin queue!\n\n";}
+        if(empty == 3){ cout << " the Priority queue!\n\n";}
         //splits the processor amount in half then adds it to the one that is empty
         int half = largest/2;
         if(half <= 5){return;}
@@ -195,7 +204,10 @@ void loadBalancing(int empty){
         }
 
     }else if (largest == proc4){
-
+        cout << half << " processes from the Priority queue to";
+        if(empty == 0){ cout << " the First Come First Serve queue!\n\n";}
+        if(empty == 2){ cout << " the Shortest Job queue!\n\n";}
+        if(empty == 1){ cout << " the Round Robin queue!\n\n";}
         //splits the processor amount in half then adds it to the one that is empty
         int half = largest/2;
         if(half <= 5){return;}
@@ -240,7 +252,7 @@ void priOrder(int end){
 void * priority(void * arg){
 
     //start variables
-    int start = (int)(long)arg;
+    int id = (int)(long)arg;
     int end =  p3.size() - 1;
 
     //order them in terms of priority
@@ -259,10 +271,11 @@ void * priority(void * arg){
         int time = p3[0].cpuTime;
         while(time > 1){
             time -= 2;
+            cout << endl << p3[0].name << " has " << p3[0].cpuTime << " time left!\n\n";
             usleep(20000);
         }
 
-        cout << "Priority: " <<  p3[0].name << " has finished!\nMoving on to the next Process!\n\n";
+        cout << "Processor: " << id << " using Priority: " <<  p3[0].name << " has finished!\nMoving on to the next Process!\n\n";
         p3.erase(p3.begin());
     }
     return (void*)0;
@@ -282,7 +295,7 @@ void shortOrder(int end){
 void * shortestJob(void * arg){
 
     //start variables
-    int start = (int)(long)arg;
+    int id = (int)(long)arg;
     int end = p2.size() - 1;
 
     //order the processes with the least amount of cpu time to the most
@@ -302,9 +315,10 @@ void * shortestJob(void * arg){
         int time = p2[0].cpuTime;
         while(time > 1){
             time -= 2;
+            cout << endl << p2[0].name << " has " << p2[0].cpuTime << " time left!\n\n";
             usleep(20000);
         }
-        cout << "SJF: " <<  p2[0].name << " has finished!\nMoving on to the next Process!\n\n";
+        cout << "Processor: " << id << " using SJF: " <<  p2[0].name << " has finished!\nMoving on to the next Process!\n\n";
         p2.erase(p2.begin());
     }
     return (void*)0;
@@ -314,7 +328,7 @@ void * shortestJob(void * arg){
 void * roundRobin(void * arg){
 
     //start variables
-    int start = (int)(long)arg;
+    int id = (int)(long)arg;
     int end = p1.size() -1, i = 0;
 
     while (true) {
@@ -330,8 +344,9 @@ void * roundRobin(void * arg){
         //cout << "p1 size: " << p1.size()   << " p0 size: " << p0.size() << endl;
         //subtract the cpu time from each  and if one gets below 1 then remove it and announce it
         p1[i].cpuTime -= 2;
+        cout << endl << p1[i].name << " has " << p1[i].cpuTime << " time left!\n\n";
         if(p1[i].cpuTime < 1){
-            cout << "RR: " <<  p1[i].name << " has finished!\nMoving on to the next Process!\n\n";
+            cout << "Processor " << id << " using RR: " <<  p1[i].name << " has finished!\nMoving on to the next Process!\n\n";
             p1.erase(p1.begin() + i);
             end--;
             if(end == 0){i = 0;}
@@ -347,6 +362,7 @@ void * roundRobin(void * arg){
 //FCFS thread algorithm
 void * firstComeFirstServe(void * arg){
     //starting variables
+    int id = (int)(long)arg;
     int end = p0.size()-1;
     int i = 0;
 
@@ -367,11 +383,12 @@ void * firstComeFirstServe(void * arg){
         int time = p0[i].cpuTime;
         while(time > 0){
             time -= 2;
+            cout << endl << p0[0].name << " has " << p0[0].cpuTime << " time left!\n\n";
             usleep(20000);
         }
 
         //print what process has finished and erase it from the vector
-        cout << "FCFS: " <<  p0[0].name << " has finished!\nMoving on to the next Process!\n\n";
+        cout << "Processor "<< id<<" using FCFS: " <<  p0[0].name << " has finished!\nMoving on to the next Process!\n\n";
         p0.erase(p0.begin());
 
         if(end == 0){i = 0;}
@@ -486,7 +503,7 @@ void getProcessors(int argc, char **argv){
             for (int l = start; l <= x; ++l) {
                 p0.push_back(processes[l]);
             }
-            pthread_create(&myThreads[k], 0, firstComeFirstServe, (void *)(long)start);
+            pthread_create(&myThreads[k], 0, firstComeFirstServe, (void *)(long)k);
             if(perc == 1){
                 while (1){
                     if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){break;}
@@ -498,7 +515,7 @@ void getProcessors(int argc, char **argv){
                 p1.push_back(processes[l]);
             }
 
-            pthread_create(&myThreads[k], 0, roundRobin, (void *)(long)start);
+            pthread_create(&myThreads[k], 0, roundRobin, (void *)(long)k);
             if(perc == 1){
                 while (1){
                     if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){break;}
@@ -510,7 +527,7 @@ void getProcessors(int argc, char **argv){
                 p2.push_back(processes[l]);
             }
 
-            pthread_create(&myThreads[k], 0, shortestJob, (void *)(long)start);
+            pthread_create(&myThreads[k], 0, shortestJob, (void *)(long)k);
             if(perc == 1){
                 while (1){
                     if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){break;}
@@ -522,7 +539,7 @@ void getProcessors(int argc, char **argv){
                 p3.push_back(processes[l]);
             }
 
-            pthread_create(&myThreads[k], 0, priority, (void *)(long)start);
+            pthread_create(&myThreads[k], 0, priority, (void *)(long)k);
             if(perc == 1){
                 while (1){
                     if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){break;}
