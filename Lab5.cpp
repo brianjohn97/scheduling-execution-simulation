@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <algorithm>
+#include <cstdio>
 
 using namespace std;
 
@@ -30,15 +31,42 @@ vector<process> p1;
 vector<process> p2;
 vector<process> p3;
 
-int totalProc = 0;
+int fileSize = 0;
 
 //read in the processes from the binary file name
-void readProcessesFromFile(string fileName){
+void readProcessesFromFile(const char *fileName){
 
     //variables for reading the file
     ifstream in;
     int totalMem = 0, numOfFiles = 0, x=0,  j;
 
+    FILE* file = fopen(fileName, "rb");
+
+    fseek(file, 0, SEEK_END);
+    fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    fileSize /= 63;
+
+    cout << "num of processes: " << fileSize << endl;
+
+    while(x < fileSize){
+        process proc = {};
+        fread(reinterpret_cast<char*>(&proc.name), sizeof(proc.name), 1, file);
+        fread(reinterpret_cast<char*>(&proc.id), sizeof(proc.id), 1, file);
+        fread(reinterpret_cast<char*>(&proc.status), sizeof(proc.status), 1, file);
+        fread(reinterpret_cast<char*>(&proc.cpuTime), sizeof(proc.cpuTime), 1, file);
+        fread(reinterpret_cast<char*>(&proc.base), sizeof(proc.base), 1, file);
+        fread(reinterpret_cast<char*>(&proc.limit), sizeof(proc.limit), 1, file);
+        fread(reinterpret_cast<char*>(&proc.type), sizeof(proc.type), 1, file);
+        fread(reinterpret_cast<char*>(&proc.numFiles), sizeof(proc.numFiles), 1, file);
+        fread(reinterpret_cast<char*>(&proc.priority), sizeof(proc.priority), 1, file);
+        fread(reinterpret_cast<char*>(&proc.checkSum), sizeof(proc.checkSum), 1, file);
+        processes.push_back(proc);
+        x++;
+    }
+
+
+    /*
     //open the binary file
     in.open(fileName, ::ifstream::binary);
 
@@ -70,9 +98,9 @@ void readProcessesFromFile(string fileName){
         //add the struct to a vector and increase x
         processes.push_back(proc);
         x++;
-    }
+    }*/
     in.close();
-    cout << "\nThe number of processes available in the file: " << totalProc << endl;
+    cout << "\nThe number of processes available in the file: " << fileSize << endl;
     cout << "Total number of memory allocated by the processes is: " << totalMem << endl;
     cout << "Overall total number of open files: " <<numOfFiles << endl << endl;
 
@@ -214,7 +242,7 @@ void loadBalancing(int empty){
 
 //print all the processes
 void printProcesses(){
-    for (int i = 0; i < totalProc; ++i) {
+    for (int i = 0; i < fileSize; ++i) {
         cout << "\nProcess["<<i<<"] Name: " << processes[i].name <<endl;
         cout << "Process ID: " << processes[i].id << endl;
         cout << "Activity Status: " << static_cast<int>(processes[i].status) << endl;
@@ -448,7 +476,7 @@ void getProcessors(int argc, char **argv){
 
     //finds what is missing from the command line arugments
     printWhatsMissing(argc, argv);
-    printProcesses();
+
     /*
     for (int i = 2, j = i + 1; i < argc; i += 2, j += 2, k++) {
 
@@ -530,7 +558,12 @@ void getProcessors(int argc, char **argv){
     }*/
 }
 int main(int argc, char *argv[]){
-    getProcessors(argc, argv);
+    //getProcessors(argc, argv);
+    readProcessesFromFile("a1.bin");
+    printProcesses();
+    cout << processes.size();
+
+
 //    cout << "\n round Robin: \n\n";
 //    print1();
 //    cout << "SJF: \n\n";
