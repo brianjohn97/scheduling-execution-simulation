@@ -42,12 +42,12 @@ void readProcessesFromFile(const char *fileName){
 
     FILE* file = fopen(fileName, "rb");
 
+    //get the length of the file  found at https://cplusplus.com/reference/cstdio/ftell/
     fseek(file, 0, SEEK_END);
     fileSize = ftell(file);
     fseek(file, 0, SEEK_SET);
     fileSize /= 63;
 
-    cout << "num of processes: " << fileSize << endl;
 
     while(x < fileSize){
         process proc = {};
@@ -62,44 +62,13 @@ void readProcessesFromFile(const char *fileName){
         fread(reinterpret_cast<char*>(&proc.priority), sizeof(proc.priority), 1, file);
         fread(reinterpret_cast<char*>(&proc.checkSum), sizeof(proc.checkSum), 1, file);
         processes.push_back(proc);
-        x++;
-    }
 
-
-    /*
-    //open the binary file
-    in.open(fileName, ::ifstream::binary);
-
-    //get the length of the file  found at https://cplusplus.com/reference/istream/istream/tellg/
-    in.seekg(0, in.end);
-    totalProc = in.tellg();
-    in.seekg(0, in.beg);
-
-    totalProc /= 63;
-    //read the process information from the binary file
-    while (x < totalProc){
-
-        //create struct for holding the data
-        process proc = {};
-        in.read(reinterpret_cast<char*>(&proc.name), sizeof(proc.name));
-        in.read(reinterpret_cast<char*>(&proc.id), sizeof(proc.id));
-        in.read(reinterpret_cast<char*>(&proc.status), sizeof(proc.status));
-        in.read(reinterpret_cast<char*>(&proc.cpuTime), sizeof(proc.cpuTime));
-        in.read(reinterpret_cast<char*>(&proc.base), sizeof(proc.base));
-        in.read(reinterpret_cast<char*>(&proc.limit), sizeof(proc.limit));
-        in.read(reinterpret_cast<char*>(&proc.type), sizeof(proc.type));
-        in.read(reinterpret_cast<char*>(&proc.numFiles), sizeof(proc.numFiles));
-        in.read(reinterpret_cast<char*>(&proc.priority), sizeof(proc.priority));
-        in.read(reinterpret_cast<char*>(&proc.checkSum), sizeof(proc.checkSum));
         //calculate the memory and the number of files
         totalMem += (proc.limit - proc.base);
         numOfFiles += proc.numFiles;
-
-        //add the struct to a vector and increase x
-        processes.push_back(proc);
         x++;
-    }*/
-    in.close();
+    }
+    fclose(file);
     cout << "\nThe number of processes available in the file: " << fileSize << endl;
     cout << "Total number of memory allocated by the processes is: " << totalMem << endl;
     cout << "Overall total number of open files: " <<numOfFiles << endl << endl;
@@ -183,7 +152,7 @@ void loadBalancing(int empty){
     int proc4 = p3.size() - 1;
     int largest = max({proc1, proc2, proc3, proc4});
     int half = largest/2;
-    if(half <= 5){ return;}
+    if(half <= 7){ return;}
 
     //determines which processor has the most
     cout << "\nTRANSFERRING\n\n";
@@ -256,13 +225,7 @@ void printProcesses(){
     }
 }
 
-//priority scheduling thread function
-void * priority(void * arg){
-
-    //start variables
-    int start = (int)(long)arg;
-    int end =  p3.size() - 1;
-
+void priOrder(int end){
     //order them in terms of priority
     for (int i = 0; i < end; ++i) {
         for (int j = i+1; j < end+1; ++j) {
@@ -271,13 +234,25 @@ void * priority(void * arg){
             }
         }
     }
+}
+
+//priority scheduling thread function
+void * priority(void * arg){
+
+    //start variables
+    int start = (int)(long)arg;
+    int end =  p3.size() - 1;
+
+    //order them in terms of priority
+    priOrder(end);
 
     while(true) {
 
         //check if the vector is empty and then get more
 
         if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){break;}
-        if(p3.empty()){pthread_mutex_lock(&myMutex); loadBalancing(3); pthread_mutex_unlock(&myMutex);}
+        if(p3.empty()){pthread_mutex_lock(&myMutex); loadBalancing(3); pthread_mutex_unlock(&myMutex);
+            priOrder(end);}
         if(p3.size() < 1){ while(1){if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){return (void*)0;}}}
 
         //subtract cpu time  until below 1 then remove it and announce it
@@ -293,13 +268,7 @@ void * priority(void * arg){
     return (void*)0;
 }
 
-//shortest job scheduling thread function
-void * shortestJob(void * arg){
-
-    //start variables
-    int start = (int)(long)arg;
-    int end = p2.size() - 1;
-
+void shortOrder(int end){
     //order the processes with the least amount of cpu time to the most
     for (int i = 0; i < end; ++i) {
         for (int j = i+1; j < end+1; ++j) {
@@ -308,13 +277,24 @@ void * shortestJob(void * arg){
             }
         }
     }
+}
+//shortest job scheduling thread function
+void * shortestJob(void * arg){
+
+    //start variables
+    int start = (int)(long)arg;
+    int end = p2.size() - 1;
+
+    //order the processes with the least amount of cpu time to the most
+    shortOrder(end);
 
 
     while(true) {
 
         //check if the vector if empty and call load balancing to get more
         if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){break;}
-        if(p2.empty()){pthread_mutex_lock(&myMutex); loadBalancing(2); pthread_mutex_unlock(&myMutex);}
+        if(p2.empty()){pthread_mutex_lock(&myMutex); loadBalancing(2); pthread_mutex_unlock(&myMutex);
+            shortOrder(end);}
         if(p2.size() < 1){ while(1){if(p0.empty() && p1.empty() && p2.empty() && p3.empty()){return (void*)0;}}}
 
 
@@ -474,10 +454,10 @@ void getProcessors(int argc, char **argv){
     int x, temp, start, k = 0;
     pthread_t myThreads[10];
 
-    //finds what is missing from the command line arugments
+    //finds what is missing from the command line arguments
     printWhatsMissing(argc, argv);
 
-    /*
+
     for (int i = 2, j = i + 1; i < argc; i += 2, j += 2, k++) {
 
         //get the start position
@@ -495,7 +475,7 @@ void getProcessors(int argc, char **argv){
         }
 
         //calculate the amount of processes from the percentage and total amount of processes
-        x = perc * totalProc;
+        x = perc * fileSize;
         x--;
         if(i != 2){x += temp;}
 
@@ -555,23 +535,11 @@ void getProcessors(int argc, char **argv){
     //join all the threads at the end
     for (int i = 1; i < k; i++){
         pthread_join(myThreads[i], NULL);
-    }*/
+    }
 }
 int main(int argc, char *argv[]){
-    //getProcessors(argc, argv);
-    readProcessesFromFile("a1.bin");
-    printProcesses();
-    cout << processes.size();
-
-
-//    cout << "\n round Robin: \n\n";
-//    print1();
-//    cout << "SJF: \n\n";
-//    print2();
-//    cout << "PRiority: \n\n";
-//    print3();
-//    cout << "\nAll the processes have been finished!\n\n";
-
+    getProcessors(argc, argv);
+    cout << "\nAll the processes are done!\n\n";
     return 0;
 }
 
